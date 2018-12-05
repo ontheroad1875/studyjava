@@ -1,0 +1,72 @@
+链接地址：https://www.cnblogs.com/lzb1096101803/p/4425483.html
+Java 设计模式之装饰者模式：
+1：装饰者类要实现真实类同样的接口；
+2：装饰者类内有一个真实对象的引用（通过装饰者类的构造器进行引入）；
+3：装饰类对象在主类中接受请求,将请求发送给真实的对象(相当于已经将引用传递到了装饰类的真实对象)；
+4：装饰者可以在传入真实对象后,增加一些附加功能(因为装饰对象和真实对象都有同样的方法,装饰对象可以添加一定操作在调用真实对象的方法,
+或者先调用真实对象的方法,再添加自己的方法)
+5：不用继承
+
+
+先用实例说话,最后再具体装饰者模式
+ 
+假设要制造添加甜蜜素和着色剂的馒头:
+1.需要生产一个正常馒头
+2.为节省成本(不使用玉米面),使用染色剂加入到正常馒头中
+3.和面,最后生产出染色馒头
+
+装饰者模式中的4个角色
+(1)被装饰者抽象Component:是一个接口或者抽象类,定义最核心的对象,这个类是装饰者的基类,例如IBread接口
+(2)被装饰者具体实现ConcreteComponent:这是Component接口或抽象类的实现,例如本例中的NormalBread
+(3)装饰者Decorator:一般是抽象类,实现Component,它里面必然有一个指向Component的引用,例如本例中AbstractBread
+(4)装饰者实现ConcreteDecorator1和ConcreteDecorator2:用来装饰最基本的类,如本例中的CornDecorator,
+
+
+JDK中的装饰者模式
+ java.io中很多使用了装饰者模式
+举个例子:FilterInputStream继承(实现)了InputStream,同时,BufferedInputStream继承了FilterInputStream,
+1,被装饰者抽象组件:即最顶层的基类InputStream
+2.被装饰者具体实现ConcreteComponent：FileInputStream和FileOutputStream就是它的实现
+3.装饰者Decorator:FilterInputStream中有一个InputStream的实例和构造方法传入InputStream对象
+    protected volatile InputStream in;  
+    protected FilterInputStream(InputStream in) {
+        this.in = in;
+    }  
+4.装饰者实现:在   BufferedInputStream  中有构造方法传入InputStream对象,实现了装饰
+    public BufferedInputStream(InputStream in, int size) {
+        super(in);
+        if (size <= 0) {
+            throw new IllegalArgumentException("Buffer size <= 0");
+        }
+        buf = new byte[size];
+    }  
+    
+这个构造方法,对比上面的做面包流程,可以惊奇的发现是一模一样的. (可以将)
+1.InputStream-->IBread
+    (这里就是InputStream,没什么好说的)
+2.FileInputStream-->NormalBread
+3.FilterInputStream-->AbstractBread
+  (实现Component,这里是InputStram.它里面必然有一个指向Component的引用,这个引用就是InputStream的实例)
+4. BufferedInputStream  --> CornDecorator
+    (装饰者实现,:用来装饰最基本的类,对传入的InputStream进行了装饰)
+  (BufferedInputStream 的super(in)就像CornDecorator中的kneadFlour()方法,也有super.kneadFlour();,只是这里IO流中用在了构造方法 )
+这就是JDK中的装饰者模式
+ 
+ 
+ 
+不用继承方式实现装饰者模式的原因(以此例为说明对象,)
+1.如果只是单独的添加色素或者甜蜜素确实是可以做到的,只需要将CornDecorator继承NormalBread 和SweetDecorator 继承NormalBread ,
+这样也能够覆盖正常制作面包的流程,添加附加的功能实现单独制作"玉米馒头"和"甜馒头".
+2.如此一来,如果我们要制作甜玉米馒头(这里加点先添加甜色素,再添加玉米色素),只需要先SweetDecorator继承 NormalBread,然后CornSweetDecorator 
+再用继承 CornDecorator ,这样似乎是没有问题的.
+3.但是想想以下的情况,如果我们希望能够在添加在添加甜色素和玉米色素中间还要加入洋葱,这要怎么做,难道说又用先SweetDecorator继承 NormalBread,
+然后OnionSweetDecorator继承SweetDecorator,最后再用CornOnionSweetDecorator 继承OnionSweetDecorator
+显然是不可能的,这样会导致原来代码的复用性低,而且形成了冗余的继承体系
+4.使用上述实例的方法完全克服了这个问题,要实现添加洋葱,只需要实现和SweetDecorator 类似的步骤即可,最后在Client类中传入就可以实现这个功能
+ 
+ 
+使用场合
+1.需要为某个现有对象添加一个新的功能或职责时,可以考虑使用装饰者模式
+2.某个对象的职责经常发生变化或经常需要动态添加职责,避免为了适应这种变化造成的继承扩展方式
+
+

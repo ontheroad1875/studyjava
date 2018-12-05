@@ -1,0 +1,26 @@
+策略模式结构图：
+
+					Context							Strategy					策略类 定义所有
+					ContextInterface()				AlgorithmInterface			支持的算法和公共的接口
+						/   /\						   /\	   /\		
+					  /	     \							|		\
+					/		  \							|        \
+				  /				ConcreteStrategyA		|		ConcreteStrategyB
+				/				AlgorithmInterface		|		AlgorithmInterface
+			  /						\				ConcreteStrategyC       /
+			/						  \				AlgorithmInterface    /
+	Context上下文						\				|               /
+	用一个ConcreteStrategy来				具体策略类，封装了具体的算法或行为，继承于Strategy
+	配置，维护一个对Strategy
+	的引用。				
+	
+可以看到，该模式包含三个角色
+	抽象策略(Strategy)：通常由接口或抽象类实现。定义了多个具体策略的公共接口，具体策略类中各种不同的算法以不同的方式实现这个接口；Context使用这些接口调用不同实现的算法。
+	具体策略(ConcreteStrategy)：实现Strategy接口或继承于抽象类Strategy，封装了具体的算法和行为。
+	环境类(Contex)：持有一个公共策略接口的引用，直接给客户端调用。
+使用场景例子  	
+	玩枪战类游戏，可以根据不同战场情况，切换枪支。
+策略模式，小结一下：
+	重点在于：给对象传入什么样的策略，就执行什么样的动作。
+	优点在于：可以轻易的扩展与改变策略，可以动态改变对象的行为。
+	缺点在于：客户端必须知道所有的策略类，并自行决定使用哪一种。每个具体的策略都会产生一个新类，这样会造成很多策略类。

@@ -1,0 +1,123 @@
+https://blog.csdn.net/ldz1997106/article/details/82856561
+
+* maven的构建生命周期中几个常见的阶段
+* validate：验证项目以及相关信息是否正确
+* compile：编译源代码和相关资源文件
+* test：对测试代码进行测试
+* package：根据不同的项目类型进行打包
+* verigy：验证打包的正确性
+* install：将打包好的包安装到本地
+* deploy：将打包好的包发布到远程
+
+main/java:代码目录
+main/resources:配置文件目录
+webapp:webapp根目录
+test/java:测试代码目录
+test/resources:测试代码目录
+
+target/classes:代码编译目录
+target/test-classes:测试代码编译目录
+
+项目结构是支持自定义的，但是不要这么做，别人看到自定义的项目结构容易产生歧义，构建标准目录有利于项目构建的标准化，如果需要自定义项目结构，
+可以在pom文件中进行配置：
+<build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <warSourceDirectory>WebContent/</warSourceDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+        <sourceDirectory>src</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>resources</directory>
+            </resource>
+        </resources>
+        <testSourceDirectory>test/java</testSourceDirectory>
+        <testResources>
+            <testResource>
+                <directory>test/resources</directory>
+            </testResource>
+        </testResources>
+        <directory>build</directory>
+</build>
+
+java代码目录移动到./src
+配置文件目录移动到resources
+测试代码目录移动到./test/java
+测试配置文件移动到./test/resources
+webapp根目录移动到WebContent
+编译目录改变成./build
+
+
+Maven其他功能：支持多插件
+
+maven-compiler-plugin：源码编译插件
+maven-source-plugin：源码发布插件，绑定compile阶段 执行jar goal，将源码以jar包形式发布出去
+maven-javadoc-plugin：javadoc插件，将源码的javadoc发布出去
+maven-tomcat7-plugin：直接使用tomcat运行项目，mvn tomcat7:run
+maven-shade-plugin：常用打包插件，绑定在package阶段，执行shade goal，将源码和依赖在一起独立运行
+maven-assesmbly-plugin：和shade相似，打包插件，支持tar,zip,gz
+maven-gpg-plugin：jar包的签名插件，针对自己发布的jar包签名
+
+配置本地Maven仓库：在maven的conf目录的settings.xml的settings标签中增加下面一行
+<localRepository>E:\maven\mavenhome\repo（你的本地仓库地址）</localRepository>
+配置Maven镜像远程仓库（阿里）：在maven的conf目录的settings.xml的mirrors标签中增加下面代码
+<mirror> 
+    <id>alimaven</id> 
+    <name>aliyun maven</name> 
+    <url>http://maven.aliyun.com/nexus/content/groups/public/</url> 
+    <mirrorOf>central</mirrorOf> 
+  </mirror>
+
+<profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <resource.dir>resource/dev</resource.dir>
+            </properties>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <resource.dir>resource/prod</resource.dir>
+            </properties>
+        </profile>
+    </profiles>
+
+   <build>
+        <resources>
+            <resource>
+                <directory>${resource.dir}</directory>
+            </resource>
+            <resource>
+                <directory>resources</directory>
+            </resource>
+        </resources>
+    </build>
+
+如此，就分为dev和prod两个环境，对应每一种环境其资源文件路径不一样，在使用MVM时，使用-P指定profile即可生效
+    
+spring 配置文件
+
+<beans xmlns:util="http://www.springframework.org/schema/util"
+xsi:schemaLocation="http://www.springframework.org/schema/util 
+http://www.springframework.org/schema/util/spring-util-3.0.xsd">     
+	<util:properties id="configProperties" location="classpath:config.properties"></util:properties>     
+	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer">        
+	<property name="properties" ref="configProperties"/>    
+	</bean>    
+</beans> 
+---------------------
+
+本文来自 jimisun博客 的CSDN 博客 ，全文地址请点击：https://blog.csdn.net/ldz1997106/article/details/82856804?utm_source=copy 
+

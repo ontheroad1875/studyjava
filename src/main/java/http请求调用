@@ -1,0 +1,244 @@
+ 我们通常做Java后台接口，是让前端访问的，让前端获取数据或者做增删改查，但是有时候，我们做的Java接口是让其他系统的Java后台调用的，让其他系统从我们这个系统获取数据或者做业务，这样就要用到HttpURLConnection。本文写得急，仅贴出样例供参考。
+
+（1）先写一个简单的，只发送请求，不附带参数。思路是打开一个URL连接，设置请求的方式，获取输入流，从流里面解析
+
+出数据。
+--------------------- 
+作者：JavaWeb大牛 
+来源：CSDN 
+原文：https://blog.csdn.net/neymar_jr/article/details/79192812 
+版权声明：本文为博主原创文章，转载请附上博文链接！
+
+@RestController
+public class TestUrlController {
+    @RequestMapping("testUrl")
+    public void testUrl(){
+        try {
+            String str = "https://www.baidu.com/";
+            URL url = new URL(str);
+            //得到connection对象。
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            //设置请求方式
+            connection.setRequestMethod("GET");
+            //连接
+            connection.connect();
+            //得到响应码
+            int responseCode = connection.getResponseCode();
+            if(responseCode == HttpURLConnection.HTTP_OK){
+                //得到响应流
+                InputStream inputStream = connection.getInputStream();
+                //获取响应
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = reader.readLine()) != null){
+                    System.out.println(line);
+                }
+                reader.close();
+                //该干的都干完了,记得把连接断了
+                connection.disconnect();
+            }
+ 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+（2）用xml 传送参数
+@Controller
+@RequestMapping("/aa/")
+public class HefeixinController {
+	private static Logger logger = Logger.getLogger(HefeixinController.class);
+	@RequestMapping(value = "RechargeRequest")
+	@ResponseBody
+	public HashMap RechargeRequest(RechargeVO rechargeVO, HttpServletResponse response) {
+		HashMap resultMap = new HashMap();
+		String phone = rechargeVO.getPhone();
+		if ((phone == null) || (phone.trim() == "")) {
+			resultMap.put("Sessionid", "20170815112314125427");
+			resultMap.put("Retncode", "-2");
+			resultMap.put("msg", "手机号不能为空！");
+			return resultMap;
+		}
+ 
+		DataInputStream input = null;
+		java.io.ByteArrayOutputStream out = null;
+ 
+		try {
+			String UserID = "Bigturntable";
+			String PIN = "Bigturntable";
+			String Sessionid = "20170815112314125427";
+			String Subscriber_id = "86" + phone + "@ims.mnc000.mcc460.3gppnetwork.org";//主账号
+			String Balance = "30";//指定充值的时长
+			String Type = "9";//套餐
+			String AccessType = "99";//接入类型
+			String Expirydate = "20180131";//本次充值的套餐截止日期
+			//String Rechargetime="20180123";
+			Date newDate = new Date();
+			SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("yyyyMMdd");//日期格式
+			SimpleDateFormat simpleDateFormat3 = new SimpleDateFormat("yyyyMMddHHmmss");//日期格式
+			String Rechargetime = simpleDateFormat2.format(newDate);//格式化日期
+			String ServiceType = "2"; //业务类型
+			String PackageID = "1011";//服务端配置
+			//充值交易流水号，唯一标识一笔充值，字母+数字的字符串，
+			// 格式：6位接入设备标识(AAAAAA)+年月日时分秒（Yyyymmddhhmiss）+六位流水号（xxxxxx）
+			String Transid = "hfxdgy" + simpleDateFormat3.format(newDate) + (int) ((Math.random() * 9 + 1) * 100000);
+			String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+					+ "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:comm3=\"http://www.chinatelecom.com.cn/schema/ctcc/common/v2_1\" xmlns:ns2=\"http://tempuri.org/ns2.xsd\">"
+					+ "<SOAP-ENV:Header>"
+					+ "</SOAP-ENV:Header>"
+					+ "<SOAP-ENV:Body>"
+					+ "<ns2:RechargeRequest>" +
+					"<AuthValue>" +
+					"<UserID>" + UserID + "</UserID>" +
+					"<PIN>" + PIN + "</PIN>" +
+					"</AuthValue>" +
+					"<Sessionid>" + Sessionid + "</Sessionid>" +
+					"<Subscriber_id>" + Subscriber_id + "</Subscriber_id>" +
+					"<Balance>" + Balance + "</Balance>" +
+					"<Type>" + Type + "</Type>" +
+					"<AccessType>" + AccessType + "</AccessType>" +
+					"<Expirydate>" + Expirydate + "</Expirydate>" +
+					"<Rechargetime>" + Rechargetime + "</Rechargetime>" +
+					"<ServiceType>" + ServiceType + "</ServiceType>" +
+					"<PackageID>" + PackageID + "</PackageID>" +
+					"<Transid>" + Transid + "</Transid>" +
+					"</ns2:RechargeRequest>" +
+					"</SOAP-ENV:Body>" +
+					"</SOAP-ENV:Envelope>";
+			System.out.println("$$$$$$$$$$$$ 发送报文是：");
+			System.out.println(xmlString);
+			byte[] xmlData = xmlString.getBytes();
+			String urlStr = "http://XX.X.XXX.XX:6000";//接口
+			//获得到位置服务的链接
+			URL url = new URL(urlStr);
+			URLConnection urlCon = url.openConnection();//打开XX连接
+			urlCon.setDoOutput(true);
+			urlCon.setDoInput(true);
+			urlCon.setUseCaches(false);
+			urlCon.setConnectTimeout(5000);
+			urlCon.setReadTimeout(5000);
+			//将xml数据发送到位置服务
+			urlCon.setRequestProperty("Content-Type", "text/xml");
+			urlCon.setRequestProperty("Content-length", String.valueOf(xmlData.length));
+			DataOutputStream printout = new DataOutputStream(urlCon.getOutputStream());
+			printout.write(xmlData);//把报文发送到XX的接口
+			printout.flush();
+			printout.close();
+			input = new DataInputStream(urlCon.getInputStream());//获取XX接口的返回信息
+			byte[] rResult;
+			out = new java.io.ByteArrayOutputStream();
+			byte[] bufferByte = new byte[256];
+			int l = -1;
+			int downloadSize = 0;
+			while ((l = input.read(bufferByte)) > -1) {
+				downloadSize += l;
+				out.write(bufferByte, 0, l);
+				out.flush();
+			}
+			rResult = out.toByteArray();
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			Document d = db.parse(new ByteArrayInputStream(rResult));
+			System.out.println("$$$$$$$$$$$  返回报文是：");
+			System.out.println(toStringFromDoc(d));
+			String SessionidStr = d.getElementsByTagName("Sessionid").item(0).getFirstChild().getNodeValue();
+			String RetncodeStr = d.getElementsByTagName("Retncode").item(0).getFirstChild().getNodeValue();
+			resultMap.put("Sessionid", SessionidStr);
+			resultMap.put("Retncode", RetncodeStr);
+			return resultMap;
+		} catch (Exception e) {
+			e.printStackTrace();
+			resultMap.put("Sessionid", "20170815112314125427");
+			resultMap.put("Retncode", "-1");
+			resultMap.put("msg", "服务器繁忙！");
+			return resultMap;
+		} finally {
+			try {
+				out.close();
+				input.close();
+			} catch (Exception ex) {
+			}
+		}
+	}
+}
+
+
+（3）用form提交参数
+@RequestMapping(value="openMemberRights/")
+    @ResponseBody
+    public Map<String, Object> openMemberRights(
+            HttpServletResponse response,
+            @RequestParam(value="phone", required=true) String phone,
+            @RequestParam(value="productId", required=true) String productId
+    ){
+        String urlString = "https://XXXXXXXXXXXXXXXX";
+        Map<String, Object> resultMap = new HashMap();
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+        try {
+            //获取位置服务的地址
+            URL url = new URL(urlString);
+            //打开连接
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            connection.setRequestMethod("POST");
+            connection.setUseCaches(false);
+            connection.setInstanceFollowRedirects(true);
+            connection.setConnectTimeout(CONNECT_TIME_OUT);
+            connection.setReadTimeout(CONNECT_TIME_OUT);
+            //设置请求方式
+            connection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
+            connection.connect();
+            //电话号码加密
+            String mobile = AesUtil.encrypt(phone,APPSCRET.substring(0,16));
+            //唯一随机数
+            String once = new SimpleDateFormat("ssSSSS").format(new Date()) + String.valueOf(Math.random()).substring(2, 8);
+            //参数签名
+            HashMap<String,String> hashMap = new HashMap<>();
+            hashMap.put("app_key",APP_KEY);
+            hashMap.put("version", "1.0");
+            hashMap.put("sdk_from", "java");
+            hashMap.put("channel", CHANNEL);
+            hashMap.put("once", once);
+            hashMap.put("productId",productId);
+            hashMap.put("mobile", mobile);
+            String signatur = SignUtil.getNornmalSignature(hashMap,APPSCRET);
+            // 表单参数与get形式一样,拼接form参数
+            StringBuffer params = new StringBuffer();
+            params.append("app_key").append("=").append(APP_KEY).append("&")
+                    .append("version").append("=").append("1.0").append("&")
+                    .append("sdk_from").append("=").append("java").append("&")
+                    .append("channel").append("=").append(CHANNEL).append("&")
+                    .append("once").append("=").append(once).append("&")
+                    .append("productId").append("=").append(productId).append("&")
+                    .append("mobile").append("=").append(mobile).append("&")
+                    .append("signature").append("=").append(signatur);          
+            byte[] bypes = params.toString().getBytes();
+            // 输入参数
+            outputStream = connection.getOutputStream();
+            outputStream.write(bypes);
+            //从输入流中读取数据
+            inputStream = connection.getInputStream();
+            String result = new String(StreamTool.readInputStream(inputStream), "UTF-8");
+            //关闭连接
+            connection.disconnect();
+            System.out.println("返回报文是：");
+            System.out.println(JsonUtil.getBeanMap(result));
+            return JsonUtil.getBeanMap(result);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            resultMap.put("error_msg","服务器错误!");
+            return resultMap;
+        }
+        finally {
+            try {
+                inputStream.close();
+                outputStream.close();
+            }
+            catch (Exception e) {
+            }
+        }
+    }
